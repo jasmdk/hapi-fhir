@@ -398,8 +398,12 @@ public class SearchBuilder implements ISearchBuilder {
 							dt = dt.toUnqualified();
 						} else {
 							ourLog.debug("Searching for resource link with target URL: {}", dt.getValue());
-							Predicate eq = myBuilder.equal(join.get("myTargetResourceUrl"), dt.getValue());
-							codePredicates.add(eq);
+							//Predicate eq = myBuilder.equal(join.get("myTargetResourceUrl"), dt.getValue());
+							//codePredicates.add(eq);
+							//Backported fix to release 3.7.0 - see https://github.com/jamesagnew/hapi-fhir/commit/cf7cd403360b5928db09427837f833262aef9ae0
+							Predicate pathPredicate = createResourceLinkPathPredicate(theResourceName, theParamName, join);
+							Predicate pidPredicate = myBuilder.equal(join.get("myTargetResourceUrl"), dt.getValue());
+							codePredicates.add(myBuilder.and(pathPredicate, pidPredicate));
 							continue;
 						}
 					}
