@@ -91,7 +91,7 @@ public class FhirInstanceValidatorR4Test {
 
 		ValidationResult output = myVal.validateWithResult(resource);
 		List<SingleValidationMessage> nonInfo = logResultsAndReturnNonInformationalOnes(output);
-		assertThat(nonInfo, hasSize(2));
+		assertThat(nonInfo, hasSize(3));
 	}
 
 	@SuppressWarnings("unchecked")
