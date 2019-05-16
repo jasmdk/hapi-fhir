@@ -1052,6 +1052,22 @@ public class FhirInstanceValidatorDstu3Test {
 	}
 
 	@Test
+	public void validateReferenceType_withNotSupportedReferencedType() {
+		// Arrange
+		Reference notSupportedReference = new Reference("Patient/1234");
+
+		Communication communication = new Communication();
+		communication.setStatus(Communication.CommunicationStatus.COMPLETED);
+		communication.setDefinition(Arrays.asList(notSupportedReference));
+
+		// Act
+		ValidationResult validationResult = myVal.validateWithResult(communication);
+
+		// Assert
+		assertEquals(1, validationResult.getMessages().size());
+	}
+
+	@Test
 	public void validateReferenceType_withNotSupportedContainedType() {
 		// Arrange
 		Patient patient = new Patient();
@@ -1162,6 +1178,50 @@ public class FhirInstanceValidatorDstu3Test {
 
 		// Assert
 		assertEquals(1, validationResult.getMessages().size());
+	}
+
+	@Test
+	public void validateReferenceAggregationMode_ContainedOrReferenced_withReferenced() {
+		// Arrange
+		String differentialSubjectReferenced = "<StructureDefinition xmlns=\"http://hl7.org/fhir\">\n" +
+			"<url value=\"http://example.org/fhir/StructureDefinition/MyCommunication\"/>\n" +
+			"<name value=\"MyCommunication\"/>\n" +
+			"<status value=\"draft\"/>\n" +
+			"<fhirVersion value=\"3.0.1\"/>\n" +
+			"<kind value=\"resource\"/>\n" +
+			"<abstract value=\"false\"/>\n" +
+			"<type value=\"Communication\"/>\n" +
+			"<baseDefinition value=\"http://hl7.org/fhir/StructureDefinition/Communication\"/>\n" +
+			"<derivation value=\"constraint\"/>\n" +
+			" <differential>\n" +
+			" <element id=\"Communication.subject\">\n" +
+			"<path value=\"Communication.subject\"/>\n" +
+			" <type>\n" +
+			"<code value=\"Reference\"/>\n" +
+			"<targetProfile value=\"http://hl7.org/fhir/StructureDefinition/Patient\"/>\n" +
+			"<aggregation value=\"contained\"/>\n" +
+			"<aggregation value=\"referenced\"/>\n" +
+			"</type>\n" +
+			" <type>\n" +
+			"<code value=\"Reference\"/>\n" +
+			"<targetProfile value=\"http://hl7.org/fhir/StructureDefinition/Group\"/>\n" +
+			"</type>\n" +
+			"</element>\n" +
+			"</differential>\n" +
+			"</StructureDefinition>";
+
+		Communication communication = new Communication();
+		communication.getMeta().addProfile("http://example.org/fhir/StructureDefinition/MyCommunication");
+		communication.setStatus(Communication.CommunicationStatus.COMPLETED);
+		communication.setSubject(new Reference("Patient/1234"));
+
+		FhirValidator fhirValidator = createFhirValidator(differentialSubjectReferenced);
+
+		// Act
+		ValidationResult validationResult = fhirValidator.validateWithResult(communication);
+
+		// Assert
+		assertTrue(validationResult.getMessages().isEmpty());
 	}
 
 	@Test
