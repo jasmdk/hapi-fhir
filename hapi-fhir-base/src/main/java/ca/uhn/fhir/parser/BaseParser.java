@@ -113,7 +113,7 @@ public abstract class BaseParser implements IParser {
 							 */
 							if (myNext.getDef().getElementName().equals("id")) {
 								myNext = null;
-							} else if (!myNext.shouldBeEncoded()) {
+							} else if (!myNext.shouldBeEncoded() && !theContainedResource) {
 								myNext = null;
 							} else if (isSummaryMode() && !myNext.getDef().isSummary()) {
 								myNext = null;
