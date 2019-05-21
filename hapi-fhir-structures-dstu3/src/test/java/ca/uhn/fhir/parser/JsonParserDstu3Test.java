@@ -2415,7 +2415,6 @@ public class JsonParserDstu3Test {
 		assertTrue(parsedPatient.getMeta().isEmpty());
 
 		Resource containedResource = parsedPatient.getContained().get(0);
-		assertNotNull(containedResource.getMeta());
 		assertNull(containedResource.getMeta().getVersionId());
 		assertNull(containedResource.getMeta().getLastUpdated());
 		assertTrue(containedResource.getMeta().getSecurity().isEmpty());
