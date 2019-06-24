@@ -20,24 +20,11 @@ package org.hl7.fhir.r4.validation;
  * #L%
  */
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
+import ca.uhn.fhir.util.ObjectUtil;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
-import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.exceptions.*;
 import org.hl7.fhir.convertors.VersionConvertorConstants;
 import org.hl7.fhir.exceptions.DefinitionException;
 import org.hl7.fhir.exceptions.FHIRException;
@@ -48,70 +35,22 @@ import org.hl7.fhir.r4.context.IWorkerContext;
 import org.hl7.fhir.r4.context.IWorkerContext.ValidationResult;
 import org.hl7.fhir.r4.elementmodel.Element;
 import org.hl7.fhir.r4.elementmodel.Element.SpecialElement;
-import org.hl7.fhir.r4.elementmodel.JsonParser;
-import org.hl7.fhir.r4.elementmodel.Manager;
+import org.hl7.fhir.r4.elementmodel.*;
 import org.hl7.fhir.r4.elementmodel.Manager.FhirFormat;
-import org.hl7.fhir.r4.elementmodel.ObjectConverter;
-import org.hl7.fhir.r4.elementmodel.ParserBase;
 import org.hl7.fhir.r4.elementmodel.ParserBase.ValidationPolicy;
-import org.hl7.fhir.r4.elementmodel.XmlParser;
 import org.hl7.fhir.r4.formats.FormatUtilities;
-import org.hl7.fhir.r4.model.Address;
-import org.hl7.fhir.r4.model.Attachment;
-import org.hl7.fhir.r4.model.Base;
-import org.hl7.fhir.r4.model.BooleanType;
-import org.hl7.fhir.r4.model.CanonicalType;
-import org.hl7.fhir.r4.model.CodeSystem;
+import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.CodeSystem.ConceptDefinitionComponent;
-import org.hl7.fhir.r4.model.CodeableConcept;
-import org.hl7.fhir.r4.model.Coding;
-import org.hl7.fhir.r4.model.Constants;
-import org.hl7.fhir.r4.model.ContactPoint;
-import org.hl7.fhir.r4.model.DateTimeType;
-import org.hl7.fhir.r4.model.DateType;
-import org.hl7.fhir.r4.model.DecimalType;
-import org.hl7.fhir.r4.model.DomainResource;
-import org.hl7.fhir.r4.model.ElementDefinition;
-import org.hl7.fhir.r4.model.ElementDefinition.AggregationMode;
-import org.hl7.fhir.r4.model.ElementDefinition.ConstraintSeverity;
-import org.hl7.fhir.r4.model.ElementDefinition.DiscriminatorType;
-import org.hl7.fhir.r4.model.ElementDefinition.ElementDefinitionBindingComponent;
-import org.hl7.fhir.r4.model.ElementDefinition.ElementDefinitionConstraintComponent;
-import org.hl7.fhir.r4.model.ElementDefinition.ElementDefinitionSlicingDiscriminatorComponent;
-import org.hl7.fhir.r4.model.ElementDefinition.PropertyRepresentation;
-import org.hl7.fhir.r4.model.ElementDefinition.TypeRefComponent;
 import org.hl7.fhir.r4.model.Enumeration;
+import org.hl7.fhir.r4.model.ElementDefinition.*;
 import org.hl7.fhir.r4.model.Enumerations.BindingStrength;
-import org.hl7.fhir.r4.model.ExpressionNode;
-import org.hl7.fhir.r4.model.Extension;
-import org.hl7.fhir.r4.model.HumanName;
-import org.hl7.fhir.r4.model.Identifier;
-import org.hl7.fhir.r4.model.ImplementationGuide;
 import org.hl7.fhir.r4.model.ImplementationGuide.ImplementationGuideGlobalComponent;
-import org.hl7.fhir.r4.model.InstantType;
-import org.hl7.fhir.r4.model.IntegerType;
-import org.hl7.fhir.r4.model.Period;
-import org.hl7.fhir.r4.model.Quantity;
-import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.Questionnaire.QuestionnaireItemAnswerOptionComponent;
 import org.hl7.fhir.r4.model.Questionnaire.QuestionnaireItemComponent;
 import org.hl7.fhir.r4.model.Questionnaire.QuestionnaireItemType;
-import org.hl7.fhir.r4.model.Range;
-import org.hl7.fhir.r4.model.Ratio;
-import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.r4.model.Resource;
-import org.hl7.fhir.r4.model.SampledData;
-import org.hl7.fhir.r4.model.StringType;
-import org.hl7.fhir.r4.model.StructureDefinition;
 import org.hl7.fhir.r4.model.StructureDefinition.StructureDefinitionKind;
 import org.hl7.fhir.r4.model.StructureDefinition.StructureDefinitionSnapshotComponent;
 import org.hl7.fhir.r4.model.StructureDefinition.TypeDerivationRule;
-import org.hl7.fhir.r4.model.TimeType;
-import org.hl7.fhir.r4.model.Timing;
-import org.hl7.fhir.r4.model.Type;
-import org.hl7.fhir.r4.model.TypeDetails;
-import org.hl7.fhir.r4.model.UriType;
-import org.hl7.fhir.r4.model.ValueSet;
 import org.hl7.fhir.r4.model.ValueSet.ValueSetExpansionContainsComponent;
 import org.hl7.fhir.r4.utils.FHIRLexer.FHIRLexerException;
 import org.hl7.fhir.r4.utils.FHIRPathEngine;
@@ -130,10 +69,12 @@ import org.hl7.fhir.utilities.xhtml.NodeType;
 import org.hl7.fhir.utilities.xhtml.XhtmlNode;
 import org.w3c.dom.Document;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 
-import ca.uhn.fhir.util.ObjectUtil;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 
 /**
@@ -1762,28 +1703,8 @@ public class InstanceValidator extends BaseValidator implements IResourceValidat
     else
       ft = tryParse(ref);
 
-    if (reference.hasType()) {
-      // the type has to match the specified
-      String tu = isAbsolute(reference.getType()) ? reference.getType() : "http://hl7.org/fhir/StructureDefinition/"+reference.getType();
-      TypeRefComponent containerType = container.getType("Reference");
-      if (!containerType.hasTargetProfile(tu) && !containerType.hasTargetProfile("http://hl7.org/fhir/StructureDefinition/Resource")) {
-        boolean matchingResource = false;
-        for (CanonicalType target: containerType.getTargetProfile()) {
-          StructureDefinition sd = (StructureDefinition)context.fetchResource(StructureDefinition.class, target.asStringValue());
-          if (("http://hl7.org/fhir/StructureDefinition/" + sd.getType()).equals(tu)) {
-            matchingResource = true;
-            break;
-          }
-        }
-        rule(errors, IssueType.STRUCTURE, element.line(), element.col(), path, matchingResource, 
-            "The type '"+reference.getType()+"' is not a valid Target for this element (must be one of "+container.getType("Reference").getTargetProfile()+")");
-        
-      }
-      // the type has to match the actual
-      rule(errors, IssueType.STRUCTURE, element.line(), element.col(), path, ft==null || ft.equals(reference.getType()), "The specified type '"+reference.getType()+"' does not match the found type '"+ft+"'");      
-    }
-    
-    if (we != null && pol.checkType()) {
+
+
       if (warning(errors, IssueType.STRUCTURE, element.line(), element.col(), path, ft!=null, "Unable to determine type of target resource")) {
         boolean ok = false;
         CommaSeparatedStringBuilder b = new CommaSeparatedStringBuilder();
@@ -1806,16 +1727,16 @@ public class InstanceValidator extends BaseValidator implements IResourceValidat
               } else
                 ok = true; // suppress following check
               if (ok && type.hasAggregation()) {
-                boolean modeOk;
+                boolean modeOk = false;
                 for (Enumeration<AggregationMode> mode : type.getAggregation()) {
                   if (mode.getValue().equals(AggregationMode.CONTAINED) && refType.equals("contained"))
-                    ok = true;
-                  else if (mode.getValue().equals(AggregationMode.BUNDLED) && refType.equals("bundled"))
-                    ok = true;
-                  else if (mode.getValue().equals(AggregationMode.REFERENCED) && (refType.equals("bundled")||refType.equals("remote")))
-                    ok = true;
+							modeOk = true;
+                  else if (mode.getValue().equals(AggregationMode.BUNDLED) && refType.equals("bundle"))
+							modeOk = true;
+                  else if (mode.getValue().equals(AggregationMode.REFERENCED) && (refType.equals("bundle")||refType.equals("remote")))
+							modeOk = true;
                 }
-                rule(errors, IssueType.STRUCTURE, element.line(), element.col(), path, ok, "Reference is " + refType + " which isn't supported by the specified aggregation mode(s) for the reference");
+                rule(errors, IssueType.STRUCTURE, element.line(), element.col(), path, modeOk, "Reference is " + refType + " which isn't supported by the specified aggregation mode(s) for the reference");
               }
               if (ok)
                 break;
@@ -1827,24 +1748,6 @@ public class InstanceValidator extends BaseValidator implements IResourceValidat
         }
         rule(errors, IssueType.STRUCTURE, element.line(), element.col(), path, ok, "Invalid Resource target type. Found " + ft + ", but expected one of (" + b.toString() + ")");
       }
-    }
-    if (we == null) {
-    	// Ensure that reference was not defined as being "bundled" or "contained"
-        boolean missingRef = false;
-        for (TypeRefComponent type : container.getType()) {
-        	if (!missingRef && type.getCode().equals("Reference")) {
-        		if (type.hasAggregation()) {
-        			for (Enumeration<AggregationMode> mode : type.getAggregation()) {
-        				if (mode.getValue().equals(AggregationMode.CONTAINED) || mode.getValue().equals(AggregationMode.BUNDLED)) {
-        					missingRef = true;
-        					break;
-        				}
-        			}
-        		}
-        	}
-        }
-        rule(errors, IssueType.REQUIRED, -1, -1, path, !missingRef, "Bundled or contained reference not found within the bundle/resource " + ref);
-    }
 
     if (pol == ReferenceValidationPolicy.CHECK_VALID) {
       // todo....
