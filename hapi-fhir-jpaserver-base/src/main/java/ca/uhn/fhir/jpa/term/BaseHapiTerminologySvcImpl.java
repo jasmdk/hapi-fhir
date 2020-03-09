@@ -153,7 +153,7 @@ public abstract class BaseHapiTerminologySvcImpl implements IHapiTerminologySvc,
 	}
 
 	private void addCodeIfNotAlreadyAdded(ValueSet.ValueSetExpansionComponent theExpansionComponent, Set<String> theAddedCodes, Collection<TermConceptDesignation> theDesignations, boolean theAdd, AtomicInteger theCodeCounter, String theCodeSystem, String theCode, String theDisplay) {
-		if (isNotBlank(theCode) && theAdd && theAddedCodes.add(theCode)) {
+		if (isNotBlank(theCode) && theAdd && theAddedCodes.add(theCodeSystem + "|" + theCode)) {
 			ValueSet.ValueSetExpansionContainsComponent contains = theExpansionComponent.addContains();
 			contains.setCode(theCode);
 			contains.setSystem(theCodeSystem);
@@ -173,7 +173,7 @@ public abstract class BaseHapiTerminologySvcImpl implements IHapiTerminologySvc,
 			theCodeCounter.incrementAndGet();
 		}
 
-		if (!theAdd && theAddedCodes.remove(theCode)) {
+		if (!theAdd && theAddedCodes.remove(theCodeSystem + "|" + theCode)) {
 			removeCodeFromExpansion(theCodeSystem, theCode, theExpansionComponent);
 			theCodeCounter.decrementAndGet();
 		}
@@ -181,13 +181,13 @@ public abstract class BaseHapiTerminologySvcImpl implements IHapiTerminologySvc,
 
 	private void addConceptsToList(ValueSet.ValueSetExpansionComponent theExpansionComponent, Set<String> theAddedCodes, String theSystem, List<CodeSystem.ConceptDefinitionComponent> theConcept, boolean theAdd) {
 		for (CodeSystem.ConceptDefinitionComponent next : theConcept) {
-			if (theAdd && theAddedCodes.add(next.getCode())) {
+			if (theAdd && theAddedCodes.add(theSystem + "|" + next.getCode())) {
 				ValueSet.ValueSetExpansionContainsComponent contains = theExpansionComponent.addContains();
 				contains.setCode(next.getCode());
 				contains.setSystem(theSystem);
 				contains.setDisplay(next.getDisplay());
 			}
-			if (!theAdd && theAddedCodes.remove(next.getCode())) {
+			if (!theAdd && theAddedCodes.remove(theSystem + "|" + next.getCode())) {
 				removeCodeFromExpansion(theSystem, next.getCode(), theExpansionComponent);
 			}
 			addConceptsToList(theExpansionComponent, theAddedCodes, theSystem, next.getConcept(), theAdd);
@@ -638,16 +638,16 @@ public abstract class BaseHapiTerminologySvcImpl implements IHapiTerminologySvc,
 				if (theInclude.getConcept().isEmpty() == false) {
 					for (ValueSet.ConceptReferenceComponent next : theInclude.getConcept()) {
 						String nextCode = next.getCode();
-						if (isNotBlank(nextCode) && !theAddedCodes.contains(nextCode)) {
+						if (isNotBlank(nextCode) && !theAddedCodes.contains(system + "|" + nextCode)) {
 							CodeSystem.ConceptDefinitionComponent code = findCode(codeSystemFromContext.getConcept(), nextCode);
 							if (code != null) {
-								if (theAdd && theAddedCodes.add(nextCode)) {
+								if (theAdd && theAddedCodes.add(system + "|" + nextCode)) {
 									ValueSet.ValueSetExpansionContainsComponent contains = theExpansionComponent.addContains();
 									contains.setCode(nextCode);
 									contains.setSystem(system);
 									contains.setDisplay(code.getDisplay());
 								}
-								if (!theAdd && theAddedCodes.remove(nextCode)) {
+								if (!theAdd && theAddedCodes.remove(system + "|" + nextCode)) {
 									removeCodeFromExpansion(system, nextCode, theExpansionComponent);
 								}
 							}
@@ -670,7 +670,7 @@ public abstract class BaseHapiTerminologySvcImpl implements IHapiTerminologySvc,
 						TermConcept concept = myConceptDao.findByCodeSystemAndCode(codeSystem.getCurrentVersion(), nextConcept.getCode());
 						addCodeIfNotAlreadyAdded(theExpansionComponent, theAddedCodes, concept, theAdd, theCodeCounter);
 					}
-					if (!theAdd && theAddedCodes.remove(nextConcept.getCode())) {
+					if (!theAdd && theAddedCodes.remove(system + "|" + nextConcept.getCode())) {
 						removeCodeFromExpansion(nextConcept.getSystem(), nextConcept.getCode(), theExpansionComponent);
 					}
 				}
