@@ -258,9 +258,7 @@ public class TermCodeSystemStorageSvcImpl implements ITermCodeSystemStorageSvc {
 			if (theCodeSystem.getContent() == CodeSystem.CodeSystemContentMode.COMPLETE || theCodeSystem.getContent() == null || theCodeSystem.getContent() == CodeSystem.CodeSystemContentMode.NOTPRESENT) {
 				ourLog.info("CodeSystem {} has a status of {}, going to store concepts in terminology tables", theResourceEntity.getIdDt().getValue(), theCodeSystem.getContentElement().getValueAsString());
 
-				ResourcePersistentId codeSystemResourcePid = theResourceEntity.getForcedId() == null
-					? theResourceEntity.getPersistentId()
-					: new ResourcePersistentId(Long.parseLong(theResourceEntity.getForcedId().getForcedId()));
+				ResourcePersistentId codeSystemResourcePid = getCodeSystemResourcePid(theCodeSystem.getIdElement());
 
 				/*
 				 * If this is a not-present codesystem, we don't want to store a new version if one
