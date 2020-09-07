@@ -30,7 +30,7 @@ public class CommonCodeSystemsTerminologyServiceTest {
 	@Test
 	public void testUcum_LookupCode_Bad() {
 		IValidationSupport.LookupCodeResult outcome = mySvc.lookupCode(myCtx.getValidationSupport(), "http://unitsofmeasure.org", "AAAAA");
-		assertNull( outcome);
+		assertEquals(false, outcome.isFound());
 	}
 
 	@Test
